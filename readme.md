@@ -6,7 +6,17 @@ Currently using Linux Mint 19 Cinnamon.
 Information should be universally applicable across the various Aero 15 generations and models (I'm running an Aero 15W v8 which has an i7-8750H and an nVidia GTX 1060).
 
 ## Updates
-Further testing required with nVidia 390.77 driver. I'm considering using Timeshift to go back to the old driver, but if this driver properly turns off the dGPU and allows the laptop to get the promised 9-hour battery life...
+* 20181111: 390.77 driver is a mixed bag.
+	* Pros:
+		* V-Sync works properly on HDMI output
+		* HDMI Audio only works with 390.77
+	* Cons:
+		* nVidia card is the default render device - was unable to figure out how to tell chromium-vaapi to use the iGPU for video acceleration. In fact `/dev/dri/renderD128` (iGPU on this laptop) device seems to be hardcoded in the chromium-vaapi patch so I don't think it's a problem with chromium-vaapi. Rather, `vainfo` (and other vaapi-dependent apps?) defaulted to the dGPU. I could get `vainfo` to display the iGPU's decoding capabilities by running `vainfo --display drm --device /dev/dri/renderD128`, but [setting the `LIBVA_DRIVER_NAME` environment variable](https://wiki.archlinux.org/index.php/Hardware_video_acceleration#Configuring_VA-API) to `i965`and running `vainfo` did not resolve the error.
+		* the nVidia dGPU does not expose VP9 decode capability in VDPAU. In theory it does expose H.264 decode but somehow couldn't get it to work in chromium-vaapi.
+		* Battery life on `prime-select intel` mode is 3hr+, no improvement.
+	* The best compromise would probably be to use a USB-C to HDMI dongle with the new driver and setting `prime-select intel`. You get Intel's hardware accelerated decode capabilities and HDMI audio support immediately. When you need gaming performance or working V-Sync, use the HDMI port on the laptop. I do find it really lame to use a dongle on a laptop with so much I/O though :(
+	* Who do I even ask/how do I help to resolve these issues?
+	* I've gone back to the old driver via Timeshift for now.
 
 ## Installation
 
@@ -15,7 +25,7 @@ Follow instructions from [Solving freezes during the boot sequence](https://www.
 
 Summary:
 * Wait for GRUB menu to appear
-* Ensuring that the Linux Mint option is selected, press the E key
+* Ensuring that the Linux option is selected (usually the first option), press the E key
 * Replace `quiet splash` with `nomodeset`
 * Press Ctrl-X or F10 to continue boot
 
@@ -79,6 +89,7 @@ vainfo: Supported profile and entrypoints
       VAProfileVC1Advanced            :	VAEntrypointVLD
 ```
 This means if you're using the HDMI output you don't get hardware VP9 decode acceleration...T_T.
+Update: If you're on `prime-select nvidia`, you'll get the above. If you're on `prime-select intel`, you'll get VP9 hardware decode support.
 
 ### HDMI Output
 The Aero 15's HDMI port is hardwired to the dGPU. Thus (as of nVidia 390.77), you need to **enable the nVidia dGPU** to use the HDMI port.
@@ -86,6 +97,7 @@ The Aero 15's HDMI port is hardwired to the dGPU. Thus (as of nVidia 390.77), yo
 Note: The 390.48 nVidia driver seemed to allow HDMI output even when the nVidia dGPU was disabled. This "broke" after I updated to 390.77, and troubleshooting led me to discover that HDMI output wasn't really broken, but I had to enable the dGPU. It makes sense because the HDMI port is wired to the dGPU - even on Windows, there are reports of users having the dGPU active while using HDMI output. So, I assume the old drivers did not _really_ turn off the dGPU...
 
 ### HDMI Audio
+Only works on `prime-select nvidia`.
 Follow instructions from [this post](https://devtalk.nvidia.com/default/topic/1024022/linux/gtx-1060-no-audio-over-hdmi-only-hda-intel-detected-azalia/post/5230494/#5230494) (credit to user_0462)
 
 Summary: 
@@ -100,12 +112,12 @@ sudo update-initramfs -u
 ```
 ## What doesn't
 * Ambient light sensor
+* V-Sync on iGPU (slight UI/video tearing)
 
 ## What's wonky
 * Weird behaviour when turning off the laptop display
 	* [Found video showing the problem](https://streamable.com/wsuz5)
-* Battery life is fairly bad (3-4hr)
-	* Not tested with nVidia 390.77 drivers yet
+* Battery life is fairly bad (3hr)
 
 ## Misc QoL stuff
 
@@ -116,4 +128,3 @@ sudo update-initramfs -u
 I don't believe this really makes a big difference to be honest.
 
 `xrandr --output eDP-1 --rate 60 --mode 1920x1080`
-

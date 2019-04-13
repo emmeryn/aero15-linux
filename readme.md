@@ -6,6 +6,8 @@ Currently using Linux Mint 19 Cinnamon.
 Information should be universally applicable across the various Aero 15 generations and models (I'm running an Aero 15W v8 which has an i7-8750H and an nVidia GTX 1060).
 
 ## Updates
+* 20190413: If you're experiencing intermittent system freezes, update the kernel to 4.18.0. I haven't had a single system freeze since the kernel update. To do that, open Update Manager (for Linux Mint), go to View -> Linux Kernels -> 4.18, select a kernel and click Install. Reboot.
+
 * 20181111: 390.77 driver is a mixed bag.
 	* Pros:
 		* V-Sync works properly on HDMI output
